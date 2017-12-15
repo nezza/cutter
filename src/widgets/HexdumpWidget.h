@@ -35,6 +35,19 @@ public:
 
     Highlighter        *highlighter;
 
+    enum Format {
+        Hex,
+        Octal,
+        HalfWord,
+        Word,
+        QuadWord,
+        Emoji,
+        SignedInt1,
+        SignedInt2,
+        SignedInt4,
+
+    };
+
 //signals:
 //    void fontChanged(QFont font);
 
@@ -59,6 +72,8 @@ private:
 	static const int linesMarginDefault;
 	static const int linesMarginMax;
 
+    enum Format format = Format::Hex;
+
     std::unique_ptr<Ui::HexdumpWidget> ui;
 
     RVA topOffset;
@@ -76,6 +91,8 @@ private:
     void setupScrollSync();
 
     void setupFonts();
+
+    static QString trim_end(const QStringRef& str);
 
 private slots:
     void on_seekChanged(RVA addr);
@@ -103,6 +120,17 @@ private slots:
     void on_action16columns_triggered();
     void on_action32columns_triggered();
     void on_action64columns_triggered();
+
+    void on_actionFormatHex_triggered();
+    void on_actionFormatOctal_triggered();
+    void on_actionFormatHalfWord_triggered();
+    void on_actionFormatWord_triggered();
+    void on_actionFormatQuadWord_triggered();
+    void on_actionFormatEmoji_triggered();
+    void on_actionFormatSignedInt1_triggered();
+    void on_actionFormatSignedInt2_triggered();
+    void on_actionFormatSignedInt4_triggered();
+
 
     void adjustHexdumpLines();
 

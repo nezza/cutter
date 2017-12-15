@@ -19,6 +19,7 @@
 #include <QSettings>
 
 #include <cassert>
+#include <map>
 
 const int HexdumpWidget::linesMarginMin = 32;
 const int HexdumpWidget::linesMarginDefault = 48;
@@ -322,6 +323,10 @@ void HexdumpWidget::refresh(RVA addr)
     ui->hexHexText->verticalScrollBar()->setValue(seekLine);
     ui->hexASCIIText->verticalScrollBar()->setValue(seekLine);
 
+    // Adjust width of the hex view
+    ui->hexHexText->document()->adjustSize();
+    ui->hexHexText->setFixedWidth(ui->hexHexText->document()->size().width());
+
     connectScroll(false);
 }
 
@@ -444,6 +449,7 @@ void HexdumpWidget::removeHexdumpLines(int lines, bool top)
 void HexdumpWidget::updateHeaders()
 {
     int cols = Core()->getConfigi("hex.cols");
+    int ascii_cols = cols;
     bool pairs = Core()->getConfigb("hex.pairs");
 
     QString hexHeaderString;
@@ -457,6 +463,43 @@ void HexdumpWidget::updateHeaders()
     asciiHeader.setIntegerBase(16);
     asciiHeader.setNumberFlags(QTextStream::UppercaseDigits);
 
+    // Custom spacing for the header
+    QString space = " ";
+    switch(format)
+    {
+    case Hex:
+        space = space.repeated(1);
+        break;
+    case Octal:
+        space = space.repeated(2);
+        break;
+    case SignedInt1:
+        space = space.repeated(3);
+        break;
+    case SignedInt2:
+        space = space.repeated(6);
+        cols /= 2;
+        break;
+    case SignedInt4:
+        space = space.repeated(12);
+        cols /= 4;
+        break;
+    case HalfWord:
+        space = space.repeated(5);
+        cols /= 2;
+        break;
+    case Word:
+        space = space.repeated(9);
+        cols /= 4;
+        break;
+    case QuadWord:
+        space = space.repeated(18);
+        cols /= 8;
+        break;
+    default:
+        break;
+    }
+
     for (int i=0; i<cols; i++)
     {
         if (i > 0 && ((pairs && !(i&1)) || !pairs))
@@ -464,8 +507,11 @@ void HexdumpWidget::updateHeaders()
             hexHeader << " ";
         }
 
-        hexHeader << " " << (i & 0xF);
+        hexHeader << space << (i & 0xF);
+    }
 
+    for (int i=0; i < ascii_cols; i++)
+    {
         asciiHeader << (i & 0xF);
     }
 
@@ -488,12 +534,52 @@ void HexdumpWidget::initParsing()
     ui->parseEndianComboBox->setCurrentIndex(Core()->getConfigb("cfg.bigendian") ? 1 : 0);
 }
 
+QString HexdumpWidget::trim_end(const QStringRef& str) {
+    for(int i = str.size() - 1; 0 <= i; --i)
+    {
+        if (!str.at(i).isSpace())
+        {
+            return str.left(i + 1).toString();
+        }
+    }
+
+    return "";
+}
+
 std::array<QString, 3> HexdumpWidget::fetchHexdump(RVA offset, RVA bytes)
 {
     TempConfig tempConfig;
     tempConfig.set("scr.color", false);
 
-    QString hexdump = Core()->cmd(QString("px %1 @ %2").arg(QString::number(bytes), QString::number(offset)));
+    std::map<enum Format, QString> prefix;
+    prefix[Format::Hex] = "";
+    prefix[Format::Octal] = "o";
+    prefix[Format::HalfWord] = "h";
+    prefix[Format::Word] = "w";
+    prefix[Format::QuadWord] = "q";
+    prefix[Format::Emoji] = "e";
+    prefix[Format::SignedInt1] = "d1";
+    prefix[Format::SignedInt2] = "d2";
+    prefix[Format::SignedInt4] = "d4";
+
+    // TODO: This is needed while r2 is inconsistent about the
+    // spacing it uses between offsets & data
+    std::map<enum Format, int> format_offset;
+    format_offset[Format::Hex] = 2;
+    format_offset[Format::Octal] = 2;
+    format_offset[Format::HalfWord] = 2;
+    format_offset[Format::Word] = 2;
+    format_offset[Format::QuadWord] = 1;
+    format_offset[Format::Emoji] = 0;
+    format_offset[Format::SignedInt1] = 1;
+    format_offset[Format::SignedInt2] = 2;
+    format_offset[Format::SignedInt4] = 2;
+
+
+    QString hexdump = Core()->cmd(QString("px%1 %2 @ %3").arg(
+                                      prefix[format],
+                                      QString::number(bytes),
+                                      QString::number(offset)));
 
     QString offsets;
     QString hex;
@@ -507,22 +593,16 @@ std::array<QString, 3> HexdumpWidget::fetchHexdump(RVA offset, RVA bytes)
             continue;
         }
 
-        int wc = 0;
-        for (const QString a : line.split("  "))
-        {
-            switch (wc++)
-            {
-                case 0:
-                    offsets += a + "\n";
-                    break;
-                case 1:
-                    hex += a.trimmed() + "\n";
-                    break;
-                case 2:
-                    ascii += a + "\n";
-                    break;
-            }
-        }
+        QStringList lineComponents = line.split(" ");
+        QString off = lineComponents[0].trimmed();
+        offsets += off + "\n";
+
+
+        int cols = Core()->getConfig("hex.cols").toInt();
+        ascii += QStringRef(&line, line.length() - cols, cols) + "\n";
+
+        int hex_length = line.length() - off.length() - (cols + 1 + format_offset[format]);
+        hex += trim_end(QStringRef(&line, off.length() + format_offset[format], hex_length)) + "\n";
     }
 
     return { offsets, hex, ascii };
@@ -666,11 +746,25 @@ void HexdumpWidget::showHexdumpContextMenu(const QPoint &pt)
     menu->addAction(ui->actionHexCopy_ASCII);
     menu->addAction(ui->actionHexCopy_Text);
     menu->addSeparator();*/
-    QMenu *colSubmenu = menu->addMenu("Columns");
+    QMenu *colSubmenu = menu->addMenu(tr("Columns"));
     colSubmenu->addAction(ui->action4columns);
     colSubmenu->addAction(ui->action8columns);
     colSubmenu->addAction(ui->action16columns);
     colSubmenu->addAction(ui->action32columns);
+
+    QMenu *formatSubmenu = menu->addMenu(tr("Format"));
+    formatSubmenu->addAction(ui->actionFormatHex);
+    formatSubmenu->addAction(ui->actionFormatOctal);
+    formatSubmenu->addAction(ui->actionFormatHalfWord);
+    formatSubmenu->addAction(ui->actionFormatWord);
+    formatSubmenu->addAction(ui->actionFormatQuadWord);
+    formatSubmenu->addAction(ui->actionFormatEmoji);
+
+    QMenu *signedIntFormatSubmenu = formatSubmenu->addMenu(tr("Signed integer"));
+    signedIntFormatSubmenu->addAction(ui->actionFormatSignedInt1);
+    signedIntFormatSubmenu->addAction(ui->actionFormatSignedInt2);
+    signedIntFormatSubmenu->addAction(ui->actionFormatSignedInt4);
+
     /*menu->addSeparator();
     menu->addAction(ui->actionHexEdit);
     menu->addAction(ui->actionHexPaste);
@@ -809,6 +903,60 @@ void HexdumpWidget::on_action2columns_triggered()
 void HexdumpWidget::on_action1column_triggered()
 {
     Core()->setConfig("hex.cols", 1);
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatHex_triggered()
+{
+    format = Format::Hex;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatOctal_triggered()
+{
+    format = Format::Octal;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatHalfWord_triggered()
+{
+    format = Format::HalfWord;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatWord_triggered()
+{
+    format = Format::Word;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatQuadWord_triggered()
+{
+    format = Format::QuadWord;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatEmoji_triggered()
+{
+    format = Format::Emoji;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatSignedInt1_triggered()
+{
+    format = Format::SignedInt1;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatSignedInt2_triggered()
+{
+    format = Format::SignedInt2;
+    refresh();
+}
+
+void HexdumpWidget::on_actionFormatSignedInt4_triggered()
+{
+    format = Format::SignedInt4;
     refresh();
 }
 

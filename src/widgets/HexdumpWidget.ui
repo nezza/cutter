@@ -152,12 +152,21 @@ QToolTip {
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="2">
-       <widget class="QLabel" name="hexHeaderLabel">
-        <property name="text">
-         <string>0  1  2  3 ...</string>
+      <item row="1" column="5">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
-       </widget>
+        <property name="sizeType">
+         <enum>QSizePolicy::Expanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
       <item row="1" column="0">
        <widget class="QPlainTextEdit" name="hexOffsetText">
@@ -196,10 +205,10 @@ QToolTip {
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
-       <widget class="QLabel" name="asciiHeaderLabel">
-        <property name="text">
-         <string>0123...</string>
+      <item row="1" column="1">
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -210,63 +219,10 @@ QToolTip {
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QPlainTextEdit" name="hexHexText">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="acceptDrops">
-         <bool>false</bool>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
-        </property>
-        <property name="lineWidth">
-         <number>0</number>
-        </property>
-        <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="sizeAdjustPolicy">
-         <enum>QAbstractScrollArea::AdjustToContents</enum>
-        </property>
-        <property name="lineWrapMode">
-         <enum>QPlainTextEdit::NoWrap</enum>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="4">
        <widget class="QPlainTextEdit" name="hexASCIIText">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -312,6 +268,75 @@ QToolTip {
         </property>
         <property name="readOnly">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPlainTextEdit" name="hexHexText">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="lineWidth">
+         <number>0</number>
+        </property>
+        <property name="verticalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::AdjustToContents</enum>
+        </property>
+        <property name="lineWrapMode">
+         <enum>QPlainTextEdit::NoWrap</enum>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="plainText">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QLabel" name="asciiHeaderLabel">
+        <property name="text">
+         <string>0123...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="hexHeaderLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>0  1  2  3 ...</string>
         </property>
        </widget>
       </item>
@@ -986,6 +1011,60 @@ QToolTip {
    </property>
    <property name="toolTip">
     <string>Insert String</string>
+   </property>
+  </action>
+  <action name="actionFormatHex">
+   <property name="text">
+    <string>Hex</string>
+   </property>
+  </action>
+  <action name="actionFormatOctal">
+   <property name="text">
+    <string>Octal</string>
+   </property>
+  </action>
+  <action name="actionFormatHalfWord">
+   <property name="text">
+    <string>Half-word</string>
+   </property>
+  </action>
+  <action name="actionFormatWord">
+   <property name="text">
+    <string>Word</string>
+   </property>
+  </action>
+  <action name="actionFormatQuadWord">
+   <property name="text">
+    <string>Quad-word</string>
+   </property>
+  </action>
+  <action name="actionFormatEmoji">
+   <property name="text">
+    <string>Emoji</string>
+   </property>
+  </action>
+  <action name="actionFormatSignedInt1">
+   <property name="text">
+    <string>1 byte</string>
+   </property>
+   <property name="toolTip">
+    <string>1 byte</string>
+   </property>
+  </action>
+  <action name="actionFormatSignedInt2">
+   <property name="text">
+    <string>2 bytes</string>
+   </property>
+   <property name="toolTip">
+    <string>2 bytes</string>
+   </property>
+  </action>
+  <action name="actionFormatSignedInt4">
+   <property name="text">
+    <string>4 bytes</string>
+   </property>
+   <property name="toolTip">
+    <string>4 bytes</string>
    </property>
   </action>
  </widget>
